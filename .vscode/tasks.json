@@ -9,7 +9,7 @@
             "command": "keytool -genkey -v -keystore my-release-key.jks -keyalg RSA -keysize 2048 -validity 10000 -alias my-alias",
             "windows": {
                 // "command": "${workspaceRoot}\\shell.bat first"
-                "command": "cd gitoscandroid; del my-release-key.jks; keytool -genkey -v -keystore my-release-key.jks -keyalg RSA -keysize 2048 -validity 10000 -alias my-alias"
+                "command": "if exist my-release-key.jks del my-release-key.jks; keytool -genkey -v -keystore my-release-key.jks -keyalg RSA -keysize 2048 -validity 10000 -alias my-alias"
                 // keytool -genkey -v -keystore release.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000
                 // keytool -genkey -v -keystore debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000
             },
@@ -25,7 +25,7 @@
             "command": "${workspaceRoot}/gradlew clean",
             "windows": {
                 // "command": "${workspaceRoot}\\shell.bat first"
-                "command": "${workspaceRoot}\\gradlew.bat clean "
+                "command": "$local='C:\\MyFileRoot\\Android\\gradle-9.4.0\\bin\\gradle.bat'; if (Test-Path $local) { & $local clean; if ($LASTEXITCODE -ne 0) { & '${workspaceRoot}\\gradlew.bat' clean } } else { & '${workspaceRoot}\\gradlew.bat' clean }"
             },
             "group": "test",
             "presentation": {
@@ -39,7 +39,7 @@
             "command": "${workspaceRoot}/gradlew assembleDebug ",
             "windows": {
                 // "command": "${workspaceRoot}\\shell.bat first"
-                "command": "${workspaceRoot}\\gradlew.bat assembleDebug "
+                "command": "$local='C:\\MyFileRoot\\Android\\gradle-9.4.0\\bin\\gradle.bat'; if (Test-Path $local) { & $local assembleDebug; if ($LASTEXITCODE -ne 0) { & '${workspaceRoot}\\gradlew.bat' assembleDebug } } else { & '${workspaceRoot}\\gradlew.bat' assembleDebug }"
             },
             "group": "test",
             "presentation": {
@@ -52,7 +52,7 @@
             "type": "shell",
             "command": "${workspaceRoot}/gradlew installDebug ",
             "windows": {
-                "command": "${workspaceRoot}\\gradlew.bat installDebug "
+                "command": "$local='C:\\MyFileRoot\\Android\\gradle-9.4.0\\bin\\gradle.bat'; if (Test-Path $local) { & $local installDebug; if ($LASTEXITCODE -ne 0) { & '${workspaceRoot}\\gradlew.bat' installDebug } } else { & '${workspaceRoot}\\gradlew.bat' installDebug }"
             },
             "group": "test",
             "presentation": {
@@ -65,7 +65,7 @@
             "type": "shell",
             "command": "${workspaceRoot}/gradlew installRelease ",
             "windows": {
-                "command": "${workspaceRoot}\\gradlew.bat installRelease "
+                "command": "$local='C:\\MyFileRoot\\Android\\gradle-9.4.0\\bin\\gradle.bat'; if (Test-Path $local) { & $local installRelease; if ($LASTEXITCODE -ne 0) { & '${workspaceRoot}\\gradlew.bat' installRelease } } else { & '${workspaceRoot}\\gradlew.bat' installRelease }"
             },
             "group": "test",
             "presentation": {

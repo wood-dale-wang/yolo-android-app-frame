@@ -8,17 +8,17 @@
             "type": "android",
             "request": "launch",
             "name": "Android launch",
-            "appSrcRoot": "${workspaceRoot}/gitoscandroid/src/main",
-            "apkFile": "${workspaceRoot}/gitoscandroid/build/outputs/apk/debug/app-debug.apk",
-            "adbPort": 5037,
+            "appSrcRoot": "${workspaceRoot}/app/src/main",
+            "apkFile": "${workspaceRoot}/app/build/outputs/apk/debug/app-debug.apk",
+            "adbPort": 5555,//5037
             "preLaunchTask": "InstallDebugApp"
         },
         {
             "type": "android",
             "request": "attach",
             "name": "Android attach",
-            "appSrcRoot": "${workspaceRoot}/gitoscandroid/src/main",
-            "adbPort": 5037,
+            "appSrcRoot": "${workspaceRoot}/app/src/main",
+            "adbPort": 5555,
             "processId": "${command:PickAndroidProcess}"
         }
     ]
