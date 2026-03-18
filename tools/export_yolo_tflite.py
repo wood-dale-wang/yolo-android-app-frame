@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Export Ultralytics YOLO model to TensorFlow Lite and optionally copy to Android assets.
+"""Export Ultralytics YOLO model to ncnn and optionally copy to Android assets.
 
 Usage examples:
-  uv run python tools/export_yolo_tflite.py --model yolov8n.pt --imgsz 640 --quant fp16 --copy-to-assets
-  uv run python tools/export_yolo_tflite.py --model yolov8n.pt --imgsz 640 --quant int8 --nms
+    uv run python tools/export_yolo_tflite.py --model yolo26s.pt --imgsz 640 --copy-to-assets
+    uv run python tools/export_yolo_tflite.py --model yolov8n.pt --imgsz 640 --half
 """
 
 from __future__ import annotations
@@ -17,19 +17,13 @@ from ultralytics import YOLO
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Export YOLO to TFLite for Android")
-    parser.add_argument("--model", default="yolov8n.pt", help="YOLO model name/path")
+    parser = argparse.ArgumentParser(description="Export YOLO to ncnn for Android")
+    parser.add_argument("--model", default="yolo26s.pt", help="YOLO model name/path")
     parser.add_argument("--imgsz", type=int, default=640, help="Input image size")
     parser.add_argument(
-        "--quant",
-        choices=["fp32", "fp16", "int8"],
-        default="fp16",
-        help="Quantization mode",
-    )
-    parser.add_argument(
-        "--nms",
+        "--half",
         action="store_true",
-        help="Export model with NMS head when supported",
+        help="Export with FP16 where backend supports it",
     )
     parser.add_argument(
         "--output-dir",
@@ -47,9 +41,14 @@ def parse_args() -> argparse.Namespace:
         help="Android assets directory",
     )
     parser.add_argument(
-        "--android-model-name",
-        default="yolov8n.tflite",
-        help="Destination model filename in assets",
+        "--android-param-name",
+        default="yolo26s.ncnn.param",
+        help="Destination .param filename in assets",
+    )
+    parser.add_argument(
+        "--android-bin-name",
+        default="yolo26s.ncnn.bin",
+        help="Destination .bin filename in assets",
     )
     return parser.parse_args()
 
@@ -119,25 +118,22 @@ def resolve_model_path(model_arg: str, models_dir: Path) -> Path:
     )
 
 
-def choose_tflite_file(candidates: Iterable[Path], quant: str) -> Path:
-    files = [p for p in candidates if p.suffix == ".tflite"]
-    if not files:
-        raise FileNotFoundError("No .tflite file found in export result")
+def choose_ncnn_files(candidates: Iterable[Path]) -> tuple[Path, Path]:
+    candidate_list = list(candidates)
+    params = [p for p in candidate_list if p.suffix.lower() == ".param"]
+    bins = [p for p in candidate_list if p.suffix.lower() == ".bin"]
+    if not params:
+        raise FileNotFoundError("No .param file found in ncnn export result")
+    if not bins:
+        raise FileNotFoundError("No .bin file found in ncnn export result")
 
-    # Prefer quantization-specific filenames when available.
-    preferred = {
-        "fp32": ["float32", "full_integer"],
-        "fp16": ["float16", "fp16"],
-        "int8": ["int8", "integer"],
-    }[quant]
-
-    lower_map = {p: p.name.lower() for p in files}
-    for keyword in preferred:
-        for path, lower_name in lower_map.items():
-            if keyword in lower_name:
+    def pick(paths: list[Path], preferred_name: str) -> Path:
+        for path in paths:
+            if path.name == preferred_name:
                 return path
+        return paths[0]
 
-    return files[0]
+    return pick(params, "model.ncnn.param"), pick(bins, "model.ncnn.bin")
 
 
 def write_labels(path: Path, names: dict | list) -> None:
@@ -159,43 +155,41 @@ def main() -> None:
     model_path = resolve_model_path(args.model, models_dir)
     model = YOLO(str(model_path))
     export_kwargs = {
-        "format": "tflite",
+        "format": "ncnn",
         "imgsz": args.imgsz,
-        "half": args.quant == "fp16",
-        "int8": args.quant == "int8",
-        "nms": args.nms,
+        "half": args.half,
         "project": str(output_dir),
-        "name": "ultralytics_tflite",
+        "name": "ultralytics_ncnn",
     }
 
     result = model.export(**export_kwargs)
     result_path = Path(result)
 
-    if result_path.is_file() and result_path.suffix == ".tflite":
-        tflite_path = result_path
-        export_root = result_path.parent
-    else:
-        export_root = result_path if result_path.is_dir() else output_dir
-        tflite_path = choose_tflite_file(export_root.rglob("*.tflite"), args.quant)
+    export_root = result_path if result_path.is_dir() else output_dir
+    param_path, bin_path = choose_ncnn_files(export_root.rglob("*"))
 
     labels_out = export_root / "labels.txt"
     write_labels(labels_out, model.names)
 
     print(f"[OK] Export root: {export_root}")
-    print(f"[OK] TFLite model: {tflite_path}")
+    print(f"[OK] NCNN param: {param_path}")
+    print(f"[OK] NCNN bin: {bin_path}")
     print(f"[OK] Labels file: {labels_out}")
 
     if args.copy_to_assets:
         assets_dir = Path(args.assets_dir).resolve()
         ensure_dir(assets_dir)
 
-        dest_model = assets_dir / args.android_model_name
+        dest_param = assets_dir / args.android_param_name
+        dest_bin = assets_dir / args.android_bin_name
         dest_labels = assets_dir / "labels.txt"
 
-        shutil.copy2(tflite_path, dest_model)
+        shutil.copy2(param_path, dest_param)
+        shutil.copy2(bin_path, dest_bin)
         shutil.copy2(labels_out, dest_labels)
 
-        print(f"[OK] Copied model to: {dest_model}")
+        print(f"[OK] Copied param to: {dest_param}")
+        print(f"[OK] Copied bin to: {dest_bin}")
         print(f"[OK] Copied labels to: {dest_labels}")
 
 

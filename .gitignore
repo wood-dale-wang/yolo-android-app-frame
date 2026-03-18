@@ -16,3 +16,6 @@ models/
 app/src/main/assets/
 
 *.zip
+
+# cmake编译产物
+app/.cxx/

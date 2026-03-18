@@ -3,11 +3,11 @@
 ## Overview
 This document describes the internal API for the on-device object detection pipeline:
 - Image input from local file or camera snapshot.
-- TensorFlow Lite YOLO inference.
+- ncnn YOLO inference (JNI + native runtime).
 - Output of detected object list and annotated image.
 
 Current default model contract:
-- Asset model file: `yolov8n.tflite`
+- Asset model file: `yolo26s.ncnn.param` + `yolo26s.ncnn.bin`
 - Labels file: `labels.txt`
 - Input image source: gallery (`GetContent`) or camera (`TakePicturePreview`)
 
@@ -17,11 +17,11 @@ Current default model contract:
 File: `app/src/main/kotlin/org/example/ml/YoloDetector.kt`
 
 #### Constructor
-`YoloDetector(context, modelAssetPath = "yolov8n.tflite", labelsAssetPath = "labels.txt")`
+`YoloDetector(context, modelParamAssetPath = "yolo26s.ncnn.param", modelBinAssetPath = "yolo26s.ncnn.bin", labelsAssetPath = "labels.txt")`
 
 Responsibilities:
-- Load TFLite model and labels from assets.
-- Read model input/output tensor shape.
+- Load ncnn model and labels from assets.
+- Run native inference through JNI.
 - Run preprocessing, inference, parsing, and NMS.
 
 #### Method
@@ -37,7 +37,7 @@ Output:
 - List of `DetectionResult` sorted by score descending.
 
 Coordinate parsing notes:
-- Detector supports two common YOLO TFLite box output styles:
+- Detector supports two common YOLO box output styles:
 - Normalized box (`cx, cy, w, h` in range 0~1)
 - Pixel box (`cx, cy, w, h` in model input space)
 - Runtime parsing auto-detects coordinate style and maps to original bitmap pixels.
@@ -130,19 +130,24 @@ Example:
 - Fix: UI list is scrollable and default `maxResults` increased to 200.
 
 ## Performance Notes
-- Default threads: 4 (`Interpreter.Options.setNumThreads(4)`).
+- Default threads: 4 (`ncnn::Option.num_threads = 4`).
 - Avoid repeated model creation; detector is held in ViewModel lifecycle.
-- For slower devices, prefer fp16 model for better latency.
+- For slower devices, prefer `--half` 导出模型以获得更低延迟。
 
 ## Script Contract (Model Export)
 Related script: `tools/export_yolo_tflite.py`
 
 Recommended execution:
 ```bash
-uv run python tools/export_yolo_tflite.py --model yolov8n.pt --imgsz 640 --quant fp16 --copy-to-assets
+uv run python tools/export_yolo_tflite.py --model yolo26s.pt --imgsz 640 --half --copy-to-assets
 ```
 
 Expected side effects:
-- Exported `.tflite` file and `labels.txt` generated under `export_out`.
-- Model copied to `app/src/main/assets/yolov8n.tflite`.
+- Exported `.param/.bin` and `labels.txt` are generated under `models/<model_name>_ncnn_model` (for example `models/yolo26s_ncnn_model`).
+- Model copied to `app/src/main/assets/yolo26s.ncnn.param` and `app/src/main/assets/yolo26s.ncnn.bin`.
 - Labels copied to `app/src/main/assets/labels.txt`.
+
+Common export issue:
+- Symptom: `FileNotFoundError: No .bin file found in ncnn export result`
+- Cause: filtering `.param` and `.bin` on the same generator can consume iterator elements.
+- Fix: materialize candidates first (`list(candidates)`) and then filter separately.

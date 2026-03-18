@@ -87,7 +87,7 @@ fun AppScreen(mainViewModel: MainViewModel = viewModel()) {
         horizontalAlignment = Alignment.Start
     ) {
         Text(
-            text = "YOLO TensorFlow Lite 物体识别",
+            text = "YOLO ncnn 物体识别",
             style = MaterialTheme.typography.headlineSmall
         )
         Text(

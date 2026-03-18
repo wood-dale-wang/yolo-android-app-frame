@@ -1,41 +1,40 @@
 package org.example.ml
 
+import android.content.res.AssetManager
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.RectF
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import org.tensorflow.lite.DataType
-import org.tensorflow.lite.Interpreter
-import org.tensorflow.lite.support.common.ops.NormalizeOp
-import org.tensorflow.lite.support.image.ImageProcessor
-import org.tensorflow.lite.support.image.TensorImage
-import org.tensorflow.lite.support.image.ops.ResizeOp
-import java.nio.ByteBuffer
-import java.nio.ByteOrder
 import kotlin.math.max
 import kotlin.math.min
 
 class YoloDetector(
     context: Context,
-    private val modelAssetPath: String = "yolov8n.tflite",
+    private val modelParamAssetPath: String = "yolo26s.ncnn.param",
+    private val modelBinAssetPath: String = "yolo26s.ncnn.bin",
     private val labelsAssetPath: String = "labels.txt"
 ) {
+    companion object {
+        init {
+            System.loadLibrary("yolo_ncnn")
+        }
+    }
+
     private val labels: List<String>
-    private val interpreter: Interpreter
-    private val inputWidth: Int
-    private val inputHeight: Int
+    private val inputWidth: Int = 640
+    private val inputHeight: Int = 640
 
     init {
-        val modelBuffer = loadModelBuffer(context, modelAssetPath)
-        val options = Interpreter.Options().apply {
-            setNumThreads(4)
+        val initialized = nativeInit(
+            context.assets,
+            modelParamAssetPath,
+            modelBinAssetPath,
+            true
+        )
+        require(initialized) {
+            "Failed to initialize ncnn runtime with assets: $modelParamAssetPath, $modelBinAssetPath"
         }
-        interpreter = Interpreter(modelBuffer, options)
-
-        val inputShape = interpreter.getInputTensor(0).shape()
-        inputHeight = inputShape[1]
-        inputWidth = inputShape[2]
         labels = loadLabels(context, labelsAssetPath)
     }
 
@@ -45,25 +44,13 @@ class YoloDetector(
         iouThreshold: Float = 0.45f,
         maxResults: Int = 200
     ): List<DetectionResult> = withContext(Dispatchers.Default) {
-        val resized = Bitmap.createScaledBitmap(bitmap, inputWidth, inputHeight, true)
-        val input = preprocess(resized)
+        val inputBitmap = bitmap.copy(Bitmap.Config.ARGB_8888, false)
+        val values = nativeDetect(inputBitmap)
+        val outputShape = nativeGetOutputShape()
 
-        val outputTensor = interpreter.getOutputTensor(0)
-        val outputShape = outputTensor.shape()
-        val outputType = outputTensor.dataType()
-        require(outputType == DataType.FLOAT32) {
-            "Only FLOAT32 output tensors are currently supported."
+        if (values.isEmpty() || outputShape.size != 3 || outputShape.any { it <= 0 }) {
+            return@withContext emptyList()
         }
-
-        val outputBuffer = ByteBuffer
-            .allocateDirect(outputShape.reduce(Int::times) * 4)
-            .order(ByteOrder.nativeOrder())
-
-        interpreter.run(input.buffer, outputBuffer)
-        outputBuffer.rewind()
-
-        val values = FloatArray(outputShape.reduce(Int::times))
-        outputBuffer.asFloatBuffer().get(values)
 
         val rawDetections = parsePredictions(
             values = values,
@@ -79,17 +66,7 @@ class YoloDetector(
     }
 
     fun close() {
-        interpreter.close()
-    }
-
-    private fun preprocess(bitmap: Bitmap): TensorImage {
-        val tensorImage = TensorImage(DataType.FLOAT32)
-        tensorImage.load(bitmap)
-        val imageProcessor = ImageProcessor.Builder()
-            .add(ResizeOp(inputHeight, inputWidth, ResizeOp.ResizeMethod.BILINEAR))
-            .add(NormalizeOp(0f, 255f))
-            .build()
-        return imageProcessor.process(tensorImage)
+        nativeRelease()
     }
 
     private fun parsePredictions(
@@ -254,12 +231,16 @@ class YoloDetector(
         }
     }
 
-    private fun loadModelBuffer(context: Context, path: String): ByteBuffer {
-        val bytes = context.assets.open(path).use { it.readBytes() }
-        val buffer = ByteBuffer.allocateDirect(bytes.size)
-        buffer.order(ByteOrder.nativeOrder())
-        buffer.put(bytes)
-        buffer.rewind()
-        return buffer
-    }
+    private external fun nativeInit(
+        assetManager: AssetManager,
+        paramPath: String,
+        binPath: String,
+        useVulkan: Boolean
+    ): Boolean
+
+    private external fun nativeDetect(bitmap: Bitmap): FloatArray
+
+    private external fun nativeGetOutputShape(): IntArray
+
+    private external fun nativeRelease()
 }
