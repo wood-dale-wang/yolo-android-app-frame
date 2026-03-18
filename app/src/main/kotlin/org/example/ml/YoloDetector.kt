@@ -43,7 +43,7 @@ class YoloDetector(
         bitmap: Bitmap,
         confidenceThreshold: Float = 0.3f,
         iouThreshold: Float = 0.45f,
-        maxResults: Int = 50
+        maxResults: Int = 200
     ): List<DetectionResult> = withContext(Dispatchers.Default) {
         val resized = Bitmap.createScaledBitmap(bitmap, inputWidth, inputHeight, true)
         val input = preprocess(resized)
@@ -147,10 +147,31 @@ class YoloDetector(
                 continue
             }
 
-            val left = ((cx - (w / 2f)) / inputWidth * originalWidth).coerceIn(0f, originalWidth.toFloat())
-            val top = ((cy - (h / 2f)) / inputHeight * originalHeight).coerceIn(0f, originalHeight.toFloat())
-            val right = ((cx + (w / 2f)) / inputWidth * originalWidth).coerceIn(0f, originalWidth.toFloat())
-            val bottom = ((cy + (h / 2f)) / inputHeight * originalHeight).coerceIn(0f, originalHeight.toFloat())
+            val normalizedCoords = cx <= 2f && cy <= 2f && w <= 2f && h <= 2f
+
+            val left = if (normalizedCoords) {
+                (cx - (w / 2f)) * originalWidth
+            } else {
+                ((cx - (w / 2f)) / inputWidth) * originalWidth
+            }.coerceIn(0f, originalWidth.toFloat())
+
+            val top = if (normalizedCoords) {
+                (cy - (h / 2f)) * originalHeight
+            } else {
+                ((cy - (h / 2f)) / inputHeight) * originalHeight
+            }.coerceIn(0f, originalHeight.toFloat())
+
+            val right = if (normalizedCoords) {
+                (cx + (w / 2f)) * originalWidth
+            } else {
+                ((cx + (w / 2f)) / inputWidth) * originalWidth
+            }.coerceIn(0f, originalWidth.toFloat())
+
+            val bottom = if (normalizedCoords) {
+                (cy + (h / 2f)) * originalHeight
+            } else {
+                ((cy + (h / 2f)) / inputHeight) * originalHeight
+            }.coerceIn(0f, originalHeight.toFloat())
 
             if (right <= left || bottom <= top) {
                 continue

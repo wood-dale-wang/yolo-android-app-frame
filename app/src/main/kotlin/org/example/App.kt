@@ -17,8 +17,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -150,13 +153,34 @@ fun AppScreen(mainViewModel: MainViewModel = viewModel()) {
                 modifier = Modifier.padding(top = 6.dp)
             )
         } else {
-            Column(modifier = Modifier.height(260.dp)) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(280.dp)
+                    .verticalScroll(rememberScrollState())
+            ) {
                 uiState.detections.forEach { item ->
-                    Text(
-                        text = "${item.label}  |  置信度 ${(item.score * 100).toInt()}%",
-                        style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier.padding(vertical = 4.dp)
-                    )
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 4.dp),
+                        shape = RoundedCornerShape(10.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant
+                        )
+                    ) {
+                        val box = item.boundingBox
+                        Text(
+                            text = "${item.label}  |  置信度 ${(item.score * 100).toInt()}%",
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.padding(start = 10.dp, end = 10.dp, top = 8.dp)
+                        )
+                        Text(
+                            text = "坐标: [${box.left.toInt()}, ${box.top.toInt()}, ${box.right.toInt()}, ${box.bottom.toInt()}]",
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.padding(start = 10.dp, end = 10.dp, top = 2.dp, bottom = 8.dp)
+                        )
+                    }
                 }
             }
         }
