@@ -6,3 +6,11 @@ build
 
 # Ignore Kotlin plugin data
 .kotlin
+
+.venv/
+
+imgtest/
+
+models/
+
+app/src/main/assets/
