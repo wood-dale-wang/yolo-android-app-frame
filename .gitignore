@@ -13,7 +13,10 @@ imgtest/
 
 models/
 
-app/src/main/assets/
+app/src/main/assets/labels.txt
+app/src/main/assets/*.bin
+app/src/main/assets/*.param
+
 
 *.zip
 

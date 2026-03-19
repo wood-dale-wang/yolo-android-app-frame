@@ -9,6 +9,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.launch
 import org.lzuxc.ml.DetectionResult
+import org.lzuxc.ml.DetectorModelConfig
 import org.lzuxc.ml.ImageAnnotator
 import org.lzuxc.ml.YoloDetector
 
@@ -17,13 +18,17 @@ data class AppUiState(
     val annotatedImage: Bitmap? = null,
     val detections: List<DetectionResult> = emptyList(),
     val isDetecting: Boolean = false,
+    val modelName: String = "",
     val errorMessage: String? = null
 )
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
-    private val detector = YoloDetector(application)
+    private val detectorConfig = DetectorModelConfig.fromAssets(application)
+    private val detector = YoloDetector(application, detectorConfig)
 
-    var uiState by mutableStateOf(AppUiState())
+    var uiState by mutableStateOf(
+        AppUiState(modelName = detector.modelNameForDisplay)
+    )
         private set
 
     fun clearError() {

@@ -6,14 +6,61 @@ import android.graphics.Bitmap
 import android.graphics.RectF
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.util.Properties
 import kotlin.math.max
 import kotlin.math.min
 
+data class DetectorModelConfig(
+    val modelParamAssetPath: String,
+    val modelBinAssetPath: String,
+    val labelsAssetPath: String,
+    val displayName: String?
+) {
+    companion object {
+        private const val DEFAULT_PARAM = "yolo26s.ncnn.param"
+        private const val DEFAULT_BIN = "yolo26s.ncnn.bin"
+        private const val DEFAULT_LABELS = "labels.txt"
+        private const val DEFAULT_CONFIG_ASSET = "model_config.properties"
+
+        fun default(): DetectorModelConfig {
+            return DetectorModelConfig(
+                modelParamAssetPath = DEFAULT_PARAM,
+                modelBinAssetPath = DEFAULT_BIN,
+                labelsAssetPath = DEFAULT_LABELS,
+                displayName = null
+            )
+        }
+
+        fun fromAssets(
+            context: Context,
+            configAssetPath: String = DEFAULT_CONFIG_ASSET
+        ): DetectorModelConfig {
+            val defaults = default()
+            return try {
+                val properties = Properties()
+                context.assets.open(configAssetPath).use { properties.load(it) }
+
+                val configuredParam = properties.getProperty("model.param")?.trim().orEmpty()
+                val configuredBin = properties.getProperty("model.bin")?.trim().orEmpty()
+                val configuredLabels = properties.getProperty("labels.path")?.trim().orEmpty()
+                val configuredDisplayName = properties.getProperty("model.display_name")?.trim().orEmpty()
+
+                DetectorModelConfig(
+                    modelParamAssetPath = configuredParam.ifBlank { defaults.modelParamAssetPath },
+                    modelBinAssetPath = configuredBin.ifBlank { defaults.modelBinAssetPath },
+                    labelsAssetPath = configuredLabels.ifBlank { defaults.labelsAssetPath },
+                    displayName = configuredDisplayName.ifBlank { null }
+                )
+            } catch (_: Exception) {
+                defaults
+            }
+        }
+    }
+}
+
 class YoloDetector(
     context: Context,
-    private val modelParamAssetPath: String = "yolo26s.ncnn.param",
-    private val modelBinAssetPath: String = "yolo26s.ncnn.bin",
-    private val labelsAssetPath: String = "labels.txt"
+    private val config: DetectorModelConfig = DetectorModelConfig.default()
 ) {
     companion object {
         init {
@@ -24,18 +71,22 @@ class YoloDetector(
     private val labels: List<String>
     private val inputWidth: Int = 640
     private val inputHeight: Int = 640
+    val modelNameForDisplay: String = config.displayName ?: deriveModelName(
+        config.modelParamAssetPath,
+        config.modelBinAssetPath
+    )
 
     init {
         val initialized = nativeInit(
             context.assets,
-            modelParamAssetPath,
-            modelBinAssetPath,
+            config.modelParamAssetPath,
+            config.modelBinAssetPath,
             true
         )
         require(initialized) {
-            "Failed to initialize ncnn runtime with assets: $modelParamAssetPath, $modelBinAssetPath"
+            "Failed to initialize ncnn runtime with assets: ${config.modelParamAssetPath}, ${config.modelBinAssetPath}"
         }
-        labels = loadLabels(context, labelsAssetPath)
+        labels = loadLabels(context, config.labelsAssetPath)
     }
 
     suspend fun detect(
@@ -228,6 +279,31 @@ class YoloDetector(
             }
         } catch (_: Exception) {
             emptyList()
+        }
+    }
+
+    private fun deriveModelName(paramPath: String, binPath: String): String {
+        val paramBase = modelNameFromFilename(paramPath)
+        if (paramBase.isNotBlank()) {
+            return paramBase
+        }
+
+        val binBase = modelNameFromFilename(binPath)
+        if (binBase.isNotBlank()) {
+            return binBase
+        }
+
+        return "unknown"
+    }
+
+    private fun modelNameFromFilename(path: String): String {
+        val fileName = path.substringAfterLast('/').substringAfterLast('\\')
+        return when {
+            fileName.endsWith(".ncnn.param") -> fileName.removeSuffix(".ncnn.param")
+            fileName.endsWith(".ncnn.bin") -> fileName.removeSuffix(".ncnn.bin")
+            fileName.endsWith(".param") -> fileName.removeSuffix(".param")
+            fileName.endsWith(".bin") -> fileName.removeSuffix(".bin")
+            else -> fileName
         }
     }
 

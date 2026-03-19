@@ -40,16 +40,6 @@ def parse_args() -> argparse.Namespace:
         default="app/src/main/assets",
         help="Android assets directory",
     )
-    parser.add_argument(
-        "--android-param-name",
-        default="yolo26s.ncnn.param",
-        help="Destination .param filename in assets",
-    )
-    parser.add_argument(
-        "--android-bin-name",
-        default="yolo26s.ncnn.bin",
-        help="Destination .bin filename in assets",
-    )
     return parser.parse_args()
 
 
@@ -180,8 +170,12 @@ def main() -> None:
         assets_dir = Path(args.assets_dir).resolve()
         ensure_dir(assets_dir)
 
-        dest_param = assets_dir / args.android_param_name
-        dest_bin = assets_dir / args.android_bin_name
+        model_name=args.model[:args.model.index('.')]
+
+        # dest_param = assets_dir / param_path.name
+        # dest_bin = assets_dir / bin_path.name
+        dest_param = assets_dir / (model_name+".param")
+        dest_bin = assets_dir / (model_name+".bin")
         dest_labels = assets_dir / "labels.txt"
 
         shutil.copy2(param_path, dest_param)

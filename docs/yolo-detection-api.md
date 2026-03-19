@@ -7,8 +7,10 @@ This document describes the internal API for the on-device object detection pipe
 - Output of detected object list and annotated image.
 
 Current default model contract:
-- Asset model file: `yolo26s.ncnn.param` + `yolo26s.ncnn.bin`
+- Model asset file names come from `app/src/main/assets/model_config.properties`
+- Default fallback model file: `yolo26s.ncnn.param` + `yolo26s.ncnn.bin`
 - Labels file: `labels.txt`
+- Config keys: `model.param`, `model.bin`, `labels.path`, optional `model.display_name`
 - Input image source: gallery (`GetContent`) or camera (`TakePicturePreview`)
 
 ## Module Boundaries
@@ -17,10 +19,11 @@ Current default model contract:
 File: `app/src/main/kotlin/org/example/ml/YoloDetector.kt`
 
 #### Constructor
-`YoloDetector(context, modelParamAssetPath = "yolo26s.ncnn.param", modelBinAssetPath = "yolo26s.ncnn.bin", labelsAssetPath = "labels.txt")`
+`YoloDetector(context, config = DetectorModelConfig.default())`
 
 Responsibilities:
 - Load ncnn model and labels from assets.
+- Resolve model file names from `model_config.properties` (with defaults on missing config).
 - Run native inference through JNI.
 - Run preprocessing, inference, parsing, and NMS.
 
@@ -74,6 +77,7 @@ File: `app/src/main/kotlin/org/example/ui/MainViewModel.kt`
 - `annotatedImage: Bitmap?`
 - `detections: List<DetectionResult>`
 - `isDetecting: Boolean`
+- `modelName: String`
 - `errorMessage: String?`
 
 Methods:
@@ -144,7 +148,7 @@ uv run python tools/export_yolo_tflite.py --model yolo26s.pt --imgsz 640 --half 
 
 Expected side effects:
 - Exported `.param/.bin` and `labels.txt` are generated under `models/<model_name>_ncnn_model` (for example `models/yolo26s_ncnn_model`).
-- Model copied to `app/src/main/assets/yolo26s.ncnn.param` and `app/src/main/assets/yolo26s.ncnn.bin`.
+- Model copied to `app/src/main/assets/` with original exported file names (no rename during copy).
 - Labels copied to `app/src/main/assets/labels.txt`.
 
 Common export issue:

@@ -154,6 +154,11 @@ fun AppScreen(mainViewModel: MainViewModel = viewModel()) {
             style = MaterialTheme.typography.bodyMedium,
             modifier = Modifier.padding(top = 4.dp)
         )
+        Text(
+            text = "当前模型: ${uiState.modelName.ifBlank { "默认模型" }}",
+            style = MaterialTheme.typography.bodySmall,
+            modifier = Modifier.padding(top = 2.dp)
+        )
 
         Spacer(modifier = Modifier.height(12.dp))
 
