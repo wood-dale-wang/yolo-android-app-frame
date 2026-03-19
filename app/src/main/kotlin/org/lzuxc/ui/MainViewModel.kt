@@ -1,4 +1,4 @@
-package org.example.ui
+package org.lzuxc.ui
 
 import android.app.Application
 import android.graphics.Bitmap
@@ -8,9 +8,9 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.launch
-import org.example.ml.DetectionResult
-import org.example.ml.ImageAnnotator
-import org.example.ml.YoloDetector
+import org.lzuxc.ml.DetectionResult
+import org.lzuxc.ml.ImageAnnotator
+import org.lzuxc.ml.YoloDetector
 
 data class AppUiState(
     val sourceImage: Bitmap? = null,
@@ -66,3 +66,4 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         super.onCleared()
     }
 }
+

@@ -1,4 +1,4 @@
-package org.example
+package org.lzuxc
 
 import android.Manifest
 import android.content.Context
@@ -55,7 +55,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.launch
-import org.example.ui.MainViewModel
+import org.lzuxc.ui.MainViewModel
 import java.io.File
 
 @Composable
@@ -329,3 +329,4 @@ private fun launchCameraCapture(
         onError(error)
     }
 }
+

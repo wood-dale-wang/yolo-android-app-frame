@@ -1,4 +1,4 @@
-package org.example
+package org.lzuxc
 
 import kotlin.test.Test
 import kotlin.test.assertTrue
@@ -9,3 +9,4 @@ class AppTest {
         assertTrue(true)
     }
 }
+

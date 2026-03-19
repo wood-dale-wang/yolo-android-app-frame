@@ -1,4 +1,4 @@
-package org.example.ml
+package org.lzuxc.ml
 
 import android.graphics.RectF
 
@@ -8,3 +8,4 @@ data class DetectionResult(
     val score: Float,
     val boundingBox: RectF
 )
+

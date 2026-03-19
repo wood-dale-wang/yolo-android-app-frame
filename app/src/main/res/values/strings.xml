@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Test Compose</string>
+    <string name="app_name">车辆遗留物品识别</string>
 </resources>
+
+

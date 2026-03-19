@@ -4,11 +4,11 @@ plugins {
 }
 
 android {
-    namespace = "org.example"
+    namespace = "org.lzuxc"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "org.example"
+        applicationId = "org.lzuxc"
         minSdk = 24
         targetSdk = 34
         versionCode = 1
@@ -85,3 +85,4 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
 }
+

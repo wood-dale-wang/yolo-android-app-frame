@@ -1,4 +1,4 @@
-package org.example.ml
+package org.lzuxc.ml
 
 import android.content.res.AssetManager
 import android.content.Context
@@ -244,3 +244,4 @@ class YoloDetector(
 
     private external fun nativeRelease()
 }
+

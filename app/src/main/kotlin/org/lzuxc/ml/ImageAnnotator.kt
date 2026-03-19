@@ -1,4 +1,4 @@
-package org.example.ml
+package org.lzuxc.ml
 
 import android.graphics.Bitmap
 import android.graphics.Canvas
@@ -52,3 +52,4 @@ object ImageAnnotator {
         return mutable
     }
 }
+

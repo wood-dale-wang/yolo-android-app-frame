@@ -1,4 +1,4 @@
-package org.example.ui.theme
+package org.lzuxc.ui.theme
 
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
@@ -18,3 +18,4 @@ fun TestTheme(
         content = content
     )
 }
+

@@ -38,7 +38,7 @@ std::string jstring_to_std(JNIEnv* env, jstring value) {
 }  // namespace
 
 extern "C" JNIEXPORT jboolean JNICALL
-Java_org_example_ml_YoloDetector_nativeInit(
+Java_org_lzuxc_ml_YoloDetector_nativeInit(
     JNIEnv* env,
     jobject /*thiz*/,
     jobject asset_manager,
@@ -100,7 +100,7 @@ Java_org_example_ml_YoloDetector_nativeInit(
 }
 
 extern "C" JNIEXPORT jfloatArray JNICALL
-Java_org_example_ml_YoloDetector_nativeDetect(
+Java_org_lzuxc_ml_YoloDetector_nativeDetect(
     JNIEnv* env,
     jobject /*thiz*/,
     jobject bitmap
@@ -194,7 +194,7 @@ Java_org_example_ml_YoloDetector_nativeDetect(
 }
 
 extern "C" JNIEXPORT jintArray JNICALL
-Java_org_example_ml_YoloDetector_nativeGetOutputShape(
+Java_org_lzuxc_ml_YoloDetector_nativeGetOutputShape(
     JNIEnv* env,
     jobject /*thiz*/
 ) {
@@ -210,7 +210,7 @@ Java_org_example_ml_YoloDetector_nativeGetOutputShape(
 }
 
 extern "C" JNIEXPORT void JNICALL
-Java_org_example_ml_YoloDetector_nativeRelease(
+Java_org_lzuxc_ml_YoloDetector_nativeRelease(
     JNIEnv* /*env*/,
     jobject /*thiz*/
 ) {
